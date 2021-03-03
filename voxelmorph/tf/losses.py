@@ -427,7 +427,7 @@ class MIND:
         f1 = tf.reshape(filter, [1, 1] + filter.shape + [1, 1])
         f2 = tf.reshape(filter, [1] + filter.shape + [1, 1, 1])
         f3 = tf.reshape(filter, filter.shape + [1, 1, 1, 1])
-        vol = tf.reshape(vol, [1] + vol.shape + [1])
+        vol = tf.reshape(vol, [1] + list(tf.shape(vol).numpy())+ [1])
         result = tf.nn.convolution(vol, f1, padding="SAME")
         result = tf.nn.convolution(result, f2, padding="SAME")
         result = tf.nn.convolution(result, f3, padding="SAME")
