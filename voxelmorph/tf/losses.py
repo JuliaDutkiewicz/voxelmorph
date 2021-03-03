@@ -1,7 +1,7 @@
 import sys
+
 import numpy as np
 import tensorflow as tf
-import tensorflow.keras.layers as KL
 import tensorflow.keras.backend as K
 
 
@@ -74,7 +74,7 @@ class MSE:
         self.image_sigma = image_sigma
 
     def loss(self, y_true, y_pred):
-        return 1.0 / (self.image_sigma**2) * K.mean(K.square(y_true - y_pred))
+        return 1.0 / (self.image_sigma ** 2) * K.mean(K.square(y_true - y_pred))
 
 
 class TukeyBiweight:
@@ -96,7 +96,7 @@ class TukeyBiweight:
     def loss(self, y_true, y_pred):
         error_sq = (y_true - y_pred) ** 2
         ind_below = tf.where(error_sq <= self.csq)
-        rho_below = (self.csq / 2) * (1 - (1 - (tf.gather_nd(error_sq, ind_below)/self.csq)) ** 3)
+        rho_below = (self.csq / 2) * (1 - (1 - (tf.gather_nd(error_sq, ind_below) / self.csq)) ** 3)
         rho_above = self.csq / 2
         w_below = tf.cast(tf.shape(ind_below)[0], tf.float32)
         w_above = tf.cast(tf.reduce_prod(tf.shape(y_pred)), tf.float32) - w_below
@@ -110,7 +110,7 @@ class Dice:
 
     def loss(self, y_true, y_pred):
         ndims = len(y_pred.get_shape().as_list()) - 2
-        vol_axes = list(range(1, ndims+1))
+        vol_axes = list(range(1, ndims + 1))
 
         top = 2 * tf.reduce_sum(y_true * y_pred, vol_axes)
         bottom = tf.reduce_sum(y_true + y_pred, vol_axes)
@@ -200,7 +200,7 @@ class KL:
         filt = np.zeros([3] * ndims + [ndims, ndims])
         for i in range(ndims):
             filt[..., i, i] = filt_inner
-                    
+
         return filt
 
     def _degree_matrix(self, vol_shape):
@@ -230,7 +230,7 @@ class KL:
         """
         vol_shape = y_pred.get_shape().as_list()[1:-1]
         ndims = len(vol_shape)
-        
+
         sm = 0
         for i in range(ndims):
             d = i + 1
@@ -276,7 +276,8 @@ class KL:
 
 class NMI:
 
-    def __init__(self, bin_centers, vol_size, sigma_ratio=0.5, max_clip=1, local=False, crop_background=False, patch_size=1):
+    def __init__(self, bin_centers, vol_size, sigma_ratio=0.5, max_clip=1, local=False, crop_background=False,
+                 patch_size=1):
         """
         Mutual information loss for image-image pairs.
         Author: Courtney Guo
@@ -311,38 +312,40 @@ class NMI:
         x_r = -x % patch_size
         y_r = -y % patch_size
         z_r = -z % patch_size
-        pad_dims = [[0,0]]
-        pad_dims.append([x_r//2, x_r - x_r//2])
-        pad_dims.append([y_r//2, y_r - y_r//2])
-        pad_dims.append([z_r//2, z_r - z_r//2])
-        pad_dims.append([0,0])
+        pad_dims = [[0, 0]]
+        pad_dims.append([x_r // 2, x_r - x_r // 2])
+        pad_dims.append([y_r // 2, y_r - y_r // 2])
+        pad_dims.append([z_r // 2, z_r - z_r // 2])
+        pad_dims.append([0, 0])
         padding = tf.constant(pad_dims)
 
         # compute image terms
         # num channels of y_true and y_pred must be 1
-        I_a = K.exp(- self.preterm * K.square(tf.pad(y_true, padding, 'CONSTANT')  - vbc))
+        I_a = K.exp(- self.preterm * K.square(tf.pad(y_true, padding, 'CONSTANT') - vbc))
         I_a /= K.sum(I_a, -1, keepdims=True)
 
-        I_b = K.exp(- self.preterm * K.square(tf.pad(y_pred, padding, 'CONSTANT')  - vbc))
+        I_b = K.exp(- self.preterm * K.square(tf.pad(y_pred, padding, 'CONSTANT') - vbc))
         I_b /= K.sum(I_b, -1, keepdims=True)
 
-        I_a_patch = tf.reshape(I_a, [(x+x_r)//patch_size, patch_size, (y+y_r)//patch_size, patch_size, (z+z_r)//patch_size, patch_size, self.num_bins])
+        I_a_patch = tf.reshape(I_a, [(x + x_r) // patch_size, patch_size, (y + y_r) // patch_size, patch_size,
+                                     (z + z_r) // patch_size, patch_size, self.num_bins])
         I_a_patch = tf.transpose(I_a_patch, [0, 2, 4, 1, 3, 5, 6])
-        I_a_patch = tf.reshape(I_a_patch, [-1, patch_size**3, self.num_bins])
+        I_a_patch = tf.reshape(I_a_patch, [-1, patch_size ** 3, self.num_bins])
 
-        I_b_patch = tf.reshape(I_b, [(x+x_r)//patch_size, patch_size, (y+y_r)//patch_size, patch_size, (z+z_r)//patch_size, patch_size, self.num_bins])
+        I_b_patch = tf.reshape(I_b, [(x + x_r) // patch_size, patch_size, (y + y_r) // patch_size, patch_size,
+                                     (z + z_r) // patch_size, patch_size, self.num_bins])
         I_b_patch = tf.transpose(I_b_patch, [0, 2, 4, 1, 3, 5, 6])
-        I_b_patch = tf.reshape(I_b_patch, [-1, patch_size**3, self.num_bins])
+        I_b_patch = tf.reshape(I_b_patch, [-1, patch_size ** 3, self.num_bins])
 
         # compute probabilities
-        I_a_permute = K.permute_dimensions(I_a_patch, (0,2,1))
+        I_a_permute = K.permute_dimensions(I_a_patch, (0, 2, 1))
         pab = K.batch_dot(I_a_permute, I_b_patch)  # should be the right size now, nb_labels x nb_bins
-        pab /= patch_size**3
+        pab /= patch_size ** 3
         pa = tf.reduce_mean(I_a_patch, 1, keepdims=True)
         pb = tf.reduce_mean(I_b_patch, 1, keepdims=True)
 
-        papb = K.batch_dot(K.permute_dimensions(pa, (0,2,1)), pb) + K.epsilon()
-        return K.mean(K.sum(K.sum(pab * K.log(pab/papb + K.epsilon()), 1), 1))
+        papb = K.batch_dot(K.permute_dimensions(pa, (0, 2, 1)), pb) + K.epsilon()
+        return K.mean(K.sum(K.sum(pab * K.log(pab / papb + K.epsilon()), 1), 1))
 
     def global_mi(self, y_true, y_pred):
         if self.crop_background:
@@ -373,26 +376,80 @@ class NMI:
         vbc = K.reshape(self.vol_bin_centers, o)
 
         # compute image terms
-        I_a = K.exp(- self.preterm * K.square(y_true  - vbc))
+        I_a = K.exp(- self.preterm * K.square(y_true - vbc))
         I_a /= K.sum(I_a, -1, keepdims=True)
 
-        I_b = K.exp(- self.preterm * K.square(y_pred  - vbc))
+        I_b = K.exp(- self.preterm * K.square(y_pred - vbc))
         I_b /= K.sum(I_b, -1, keepdims=True)
 
         # compute probabilities
-        I_a_permute = K.permute_dimensions(I_a, (0,2,1))
+        I_a_permute = K.permute_dimensions(I_a, (0, 2, 1))
         pab = K.batch_dot(I_a_permute, I_b)  # should be the right size now, nb_labels x nb_bins
         pab /= nb_voxels
         pa = tf.reduce_mean(I_a, 1, keepdims=True)
         pb = tf.reduce_mean(I_b, 1, keepdims=True)
 
-        papb = K.batch_dot(K.permute_dimensions(pa, (0,2,1)), pb) + K.epsilon()
-        return K.sum(K.sum(pab * K.log(pab/papb + K.epsilon()), 1), 1)
+        papb = K.batch_dot(K.permute_dimensions(pa, (0, 2, 1)), pb) + K.epsilon()
+        return K.sum(K.sum(pab * K.log(pab / papb + K.epsilon()), 1), 1)
 
     def loss(self, y_true, y_pred):
         y_pred = K.clip(y_pred, 0, self.max_clip)
         y_true = K.clip(y_true, 0, self.max_clip)
         return -self.mi(y_true, y_pred)
+
+
+class MIND:
+    def __init__(self, sigma=0.5):
+        self.sigma = sigma
+
+    @staticmethod
+    def search_region():
+        return [
+            [1, -1, 0, 0, 0, 0],
+            [0, 0, 1, -1, 0, 0],
+            [0, 0, 0, 0, 1, -1],
+        ]
+
+    @staticmethod
+    def shift(vol, x, y, z):
+        return tf.roll(vol, shift=[x, y, z], axis=[0, 1, 2])
+
+    # inspiered by https://github.com/tensorflow/addons/blob/v0.12.0/tensorflow_addons/image/filters.py#L218-L302
+    def get_filter(self, filter_shape):
+        sigma = tf.convert_to_tensor(self.sigma)
+        x = tf.range(-filter_shape // 2 + 1, filter_shape // 2 + 1)
+        x = tf.cast(x ** 2, sigma.dtype)
+        x = tf.nn.softmax(-x / (2.0 * (sigma ** 2)))
+        return x
+
+    @staticmethod
+    def volfilter(vol, filter):
+        f1 = tf.reshape(filter, [1, 1] + filter.shape + [1, 1])
+        f2 = tf.reshape(filter, [1] + filter.shape + [1, 1, 1])
+        f3 = tf.reshape(filter, filter.shape + [1, 1, 1, 1])
+        vol = tf.reshape(vol, [1] + vol.shape + [1])
+        result = tf.nn.convolution(vol, f1, padding="SAME")
+        result = tf.nn.convolution(result, f2, padding="SAME")
+        result = tf.nn.convolution(result, f3, padding="SAME")
+        return tf.squeeze(result)
+
+    def mind(self, image):
+        filter = self.get_filter(3)
+        [xs, ys, zs] = self.search_region()
+        output_list = []
+        for i in range(len(xs)):
+            result = self.volfilter(tf.math.square(tf.math.subtract(image, self.shift(image, xs[i], ys[i], zs[i]))),
+                                    filter)
+            output_list.append(result)
+        Dp = tf.stack(output_list, axis=3)
+        V = (tf.math.reduce_mean(Dp, axis=3))
+        I = tf.exp(tf.math.divide_no_nan(tf.math.negative(Dp), V))
+        max = tf.math.reduce_max(I)
+        I = I / max
+        return I
+
+    def loss(self, y_true, y_pred):
+        return tf.math.reduce_mean((self.mind(y_true) - self.mind(y_pred)) ** 2)
 
 
 class LossTuner:
