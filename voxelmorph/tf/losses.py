@@ -427,7 +427,7 @@ class MIND:
         f1 = tf.reshape(filter, [1, 1] + filter.shape + [1, 1])
         f2 = tf.reshape(filter, [1] + filter.shape + [1, 1, 1])
         f3 = tf.reshape(filter, filter.shape + [1, 1, 1, 1])
-        vol = tf.reshape(vol, [1] + list(tf.shape(vol).numpy())+ [1])
+        vol = tf.reshape(vol, [1] + list(tf.shape(vol).numpy()) + [1])
         result = tf.nn.convolution(vol, f1, padding="SAME")
         result = tf.nn.convolution(result, f2, padding="SAME")
         result = tf.nn.convolution(result, f3, padding="SAME")
@@ -443,7 +443,11 @@ class MIND:
             output_list.append(result)
         Dp = tf.stack(output_list, axis=3)
         V = (tf.math.reduce_mean(Dp, axis=3))
-        I = tf.exp(tf.math.divide_no_nan(tf.math.negative(Dp), V))
+        output_list = []
+        for i in range(len(xs)):
+            result = tf.exp(tf.math.divide_no_nan(tf.math.negative(Dp[:, :, :, i]), V))
+            output_list.append(result)
+        I = tf.stack(output_list, axis=3)
         max = tf.math.reduce_max(I)
         I = I / max
         return I
