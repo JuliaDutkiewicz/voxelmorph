@@ -464,7 +464,12 @@ class MIND:
     #     self.image_sigma = image_sigma
 
     def loss(self, y_true, y_pred):
-        return 1.0 / (self.sigma ** 2) * K.mean(K.square(y_true - y_pred))
+        l = tf.math.reduce_mean((self.mind(y_true) - self.mind(y_pred)) ** 2)
+        tf.print(l)
+        mse = 1.0 / (self.sigma ** 2) * K.mean(K.square(y_true - y_pred))
+        print(mse)
+        return mse
+
 
 class LossTuner:
     """
