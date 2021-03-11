@@ -452,6 +452,7 @@ class MIND:
             output_list.append(result)
         I = tf.stack(output_list, axis=3)
         max = tf.math.reduce_max(I)
+        print(max)
         I = I / max
         return I
 
