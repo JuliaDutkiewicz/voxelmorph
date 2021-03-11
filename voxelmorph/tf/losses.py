@@ -393,9 +393,12 @@ class NMI:
         return K.sum(K.sum(pab * K.log(pab / papb + K.epsilon()), 1), 1)
 
     def loss(self, y_true, y_pred):
+        tf.print(tf.shape(y_true))
         y_pred = K.clip(y_pred, 0, self.max_clip)
         y_true = K.clip(y_true, 0, self.max_clip)
-        return -self.mi(y_true, y_pred)
+        mi = -self.mi(y_true, y_pred)
+        tf.print(tf.shape(mi))
+        return mi
 
 
 class MIND:
