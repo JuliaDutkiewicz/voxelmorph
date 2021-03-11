@@ -456,7 +456,9 @@ class MIND:
         return I
 
     def loss(self, y_true, y_pred):
-        return tf.math.reduce_mean((self.mind(y_true) - self.mind(y_pred)) ** 2)
+        l = tf.math.reduce_mean((self.mind(y_true) - self.mind(y_pred)) ** 2)
+        tf.print(l)
+        return l
 
 
 class LossTuner:
