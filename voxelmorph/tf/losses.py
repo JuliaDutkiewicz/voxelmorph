@@ -472,7 +472,7 @@ class MIND:
         print("MSE")
         print(mse)
         print(tf.shape(mse))
-        return mse
+        return l
 
 
 class LossTuner:
