@@ -455,11 +455,16 @@ class MIND:
         I = I / max
         return I
 
-    def loss(self, y_true, y_pred):
-        l = tf.math.reduce_mean((self.mind(y_true) - self.mind(y_pred)) ** 2)
-        tf.print(l)
-        return l
+    # def loss(self, y_true, y_pred):
+    #     l = tf.math.reduce_mean((self.mind(y_true) - self.mind(y_pred)) ** 2)
+    #     tf.print(l)
+    #     return l
 
+    # def __init__(self, image_sigma=1.0):
+    #     self.image_sigma = image_sigma
+
+    def loss(self, y_true, y_pred):
+        return 1.0 / (self.sigma ** 2) * K.mean(K.square(y_true - y_pred))
 
 class LossTuner:
     """
