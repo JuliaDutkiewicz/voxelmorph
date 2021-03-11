@@ -465,9 +465,11 @@ class MIND:
 
     def loss(self, y_true, y_pred):
         l = tf.math.reduce_mean((self.mind(y_true) - self.mind(y_pred)) ** 2)
+        print("MIND")
         print(l)
         print(tf.shape(l))
         mse = 1.0 / (self.sigma ** 2) * K.mean(K.square(y_true - y_pred))
+        print("MSE")
         print(mse)
         print(tf.shape(mse))
         return mse
