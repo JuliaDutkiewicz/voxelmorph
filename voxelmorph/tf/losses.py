@@ -452,12 +452,12 @@ class MIND:
             output_list.append(result)
         I = tf.stack(output_list, axis=3)
         max = tf.math.reduce_max(I)
-        print(max)
+        # print(max)
         I = I / max
         return I
 
     def loss(self, y_true, y_pred):
-        print(tf.math.reduce_mean((self.mind(y_true) - self.mind(y_pred)) ** 2))
+        # print(tf.math.reduce_mean((self.mind(y_true) - self.mind(y_pred)) ** 2))
         return tf.math.reduce_mean((self.mind(y_true) - self.mind(y_pred)) ** 2)
 
 
